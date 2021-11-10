@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -17,6 +18,14 @@ using System.Xml.Linq;
 
 namespace Assignment2
 {
+
+    public class Article
+    {
+        public string Title { get; set; }
+        public DateTime Date { get; set; }
+        public string Site { get; set; }
+
+    }
     public partial class MainWindow : Window
     {
         private Thickness spacing = new Thickness(5);
@@ -151,6 +160,35 @@ namespace Assignment2
         {
             string url = addFeedTextBox.Text;
 
+
+            var document = XDocument.Load(url);
+
+            // Get the title of the first movie as a string.
+            string feedName = document.Descendants("title").First().Value;
+
+            // Get all titles as an array of strings.
+            string[] allTitles = document.Descendants("title").Skip(1).Select(t => t.Value).ToArray();
+
+
+            // We can loop over Descendants with foreach.
+                        var eightiesTitles = new List<string>();
+                        for (int i = 0; i <= 5; i++){
+                        string stringDate = document.Descendants("pubDate").Skip(i).ToString();
+                       Article article = new Article
+                        {
+                            Title = document.Descendants("title").Skip(1 + i).Select(t => t.Value).ToString(),
+                            Date = DateTime.ParseExact(document.Descendants(stringDate).Skip(i).ToString().Substring(0, 25), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture)
+
+                        };
+                
+/*                string title = movie.Descendants("title").First().Value;
+                int year = int.Parse(movie.Descendants("year").First().Value);
+                if (year >= 1980 && year < 1990)
+                {
+                    eightiesTitles.Add(title);
+                }*/
+
+            }
         }
 
         private async Task<XDocument> LoadDocumentAsync(string url)
