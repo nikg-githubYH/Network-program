@@ -18,7 +18,7 @@ using System.Xml.Linq;
 
 namespace Assignment2
 {
-
+    
     public class Article
     {
         public string Title { get; set; }
@@ -28,6 +28,7 @@ namespace Assignment2
     }
     public partial class MainWindow : Window
     {
+        public List<Article> articleList = new List<Article>();
         private Thickness spacing = new Thickness(5);
         private HttpClient http = new HttpClient();
         // We will need these as instance variables to access in event handlers.
@@ -36,6 +37,8 @@ namespace Assignment2
         private ComboBox selectFeedComboBox;
         private Button loadArticlesButton;
         private StackPanel articlePanel;
+
+        private string allFeeds = "All feeds";
 
         public MainWindow()
         {
@@ -109,6 +112,8 @@ namespace Assignment2
             grid.Children.Add(selectFeedComboBox);
             Grid.SetRow(selectFeedComboBox, 1);
             Grid.SetColumn(selectFeedComboBox, 1);
+            selectFeedComboBox.Items.Add(allFeeds);
+            selectFeedComboBox.SelectedItem = allFeeds;
 
             loadArticlesButton = new Button
             {
@@ -119,6 +124,7 @@ namespace Assignment2
             grid.Children.Add(loadArticlesButton);
             Grid.SetRow(loadArticlesButton, 1);
             Grid.SetColumn(loadArticlesButton, 2);
+            loadArticlesButton.Click += LoadArticlesButton_Click;
 
             articlePanel = new StackPanel
             {
@@ -131,6 +137,31 @@ namespace Assignment2
 
             // These are just placeholders.
             // Replace them with your own code that shows actual articles.
+           
+        }
+
+        private void LoadArticlesButton_Click(object sender, RoutedEventArgs e)
+        {
+            string url = addFeedTextBox.Text;
+
+            var document = XDocument.Load(url);
+
+            // Get all titles as an array of strings.
+            string[] allTitles = document.Descendants("title").Skip(2).Select(t => t.Value).ToArray();
+            string[] allDates = document.Descendants("pubDate").Select(t => t.Value).ToArray();
+
+            // We will only be showing 5 articles so a forEachloop would be overkill
+            for (int i = 0; i <= 5; i++)
+            {
+                Article article = new Article
+                {
+                    Title = allTitles[i],
+                    Date = DateTime.ParseExact(allDates[i].Substring(0, 25), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture),
+                    Site = document.Descendants("title").First().Value
+
+                };
+                articleList.Add(article);
+            }
             for (int i = 0; i < 3; i++)
             {
                 var articlePlaceholder = new StackPanel
@@ -142,7 +173,7 @@ namespace Assignment2
 
                 var articleTitle = new TextBlock
                 {
-                    Text = "2021-01-02 12:34 - Placeholder for an actual article title #" + (i + 1),
+                    Text = Convert.ToString(articleList[i].Date) + " " + articleList[i].Title,
                     FontWeight = FontWeights.Bold,
                     TextTrimming = TextTrimming.CharacterEllipsis
                 };
@@ -150,7 +181,7 @@ namespace Assignment2
 
                 var articleWebsite = new TextBlock
                 {
-                    Text = "Website name #" + (i + 1)
+                    Text = articleList[i].Site
                 };
                 articlePlaceholder.Children.Add(articleWebsite);
             }
@@ -160,35 +191,16 @@ namespace Assignment2
         {
             string url = addFeedTextBox.Text;
 
-
             var document = XDocument.Load(url);
 
-            // Get the title of the first movie as a string.
+
+
+            // Get the title of the xmlFile as a string.
             string feedName = document.Descendants("title").First().Value;
+            selectFeedComboBox.SelectedItem = feedName;
+            selectFeedComboBox.Items.Add(feedName);
 
-            // Get all titles as an array of strings.
-            string[] allTitles = document.Descendants("title").Skip(1).Select(t => t.Value).ToArray();
 
-
-            // We can loop over Descendants with foreach.
-                        var eightiesTitles = new List<string>();
-                        for (int i = 0; i <= 5; i++){
-                        string stringDate = document.Descendants("pubDate").Skip(i).ToString();
-                       Article article = new Article
-                        {
-                            Title = document.Descendants("title").Skip(1 + i).Select(t => t.Value).ToString(),
-                            Date = DateTime.ParseExact(document.Descendants(stringDate).Skip(i).ToString().Substring(0, 25), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture)
-
-                        };
-                
-/*                string title = movie.Descendants("title").First().Value;
-                int year = int.Parse(movie.Descendants("year").First().Value);
-                if (year >= 1980 && year < 1990)
-                {
-                    eightiesTitles.Add(title);
-                }*/
-
-            }
         }
 
         private async Task<XDocument> LoadDocumentAsync(string url)
