@@ -24,11 +24,15 @@ namespace Assignment2
         public string Title { get; set; }
         public DateTime Date { get; set; }
         public string Site { get; set; }
+        public string Url { get; set; }
 
     }
     public partial class MainWindow : Window
     {
-        public List<Article> articleList = new List<Article>();
+        private List<Article> articleList = new List<Article>();
+        private XDocument document;
+        private string url;
+        private Dictionary<string, string> feedUrls = new Dictionary<string, string>();
         private Thickness spacing = new Thickness(5);
         private HttpClient http = new HttpClient();
         // We will need these as instance variables to access in event handlers.
@@ -38,7 +42,7 @@ namespace Assignment2
         private Button loadArticlesButton;
         private StackPanel articlePanel;
 
-        private string allFeeds = "All feeds";
+        private string allFeeds = "All Feeds";
 
         public MainWindow()
         {
@@ -140,11 +144,16 @@ namespace Assignment2
            
         }
 
-        private void LoadArticlesButton_Click(object sender, RoutedEventArgs e)
+        private async void LoadArticlesButton_Click(object sender, RoutedEventArgs e)
         {
-            string url = addFeedTextBox.Text;
+            //string url = addFeedTextBox.Text;
 
-            var document = XDocument.Load(url);
+            //var document = await LoadDocumentAsync(selectFeedComboBox.SelectedItem);
+
+            //if ()
+            //{
+
+            //}
 
             // Get all titles as an array of strings.
             string[] allTitles = document.Descendants("title").Skip(2).Select(t => t.Value).ToArray();
@@ -157,59 +166,75 @@ namespace Assignment2
                 {
                     Title = allTitles[i],
                     Date = DateTime.ParseExact(allDates[i].Substring(0, 25), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture),
-                    Site = document.Descendants("title").First().Value
-
+                    Site = document.Descendants("title").First().Value,
+                    Url = url
                 };
                 articleList.Add(article);
             }
+
             for (int i = 0; i < 5; i++)
             {
-                var articlePlaceholder = new StackPanel
+                if (articleList[i].Site == selectFeedComboBox.SelectedItem.ToString())
                 {
-                    Orientation = Orientation.Vertical,
-                    Margin = spacing
-                };
-                articlePanel.Children.Add(articlePlaceholder);
+                    document = await LoadDocumentAsync(articleList[i].Url);
 
-                var articleTitle = new TextBlock
-                {
-                    Text = Convert.ToString(articleList[i].Date) + " " + articleList[i].Title,
-                    FontWeight = FontWeights.Bold,
-                    TextTrimming = TextTrimming.CharacterEllipsis
-                };
-                articlePlaceholder.Children.Add(articleTitle);
+                        var articleBox = new StackPanel
+                        {
+                            Orientation = Orientation.Vertical,
+                            Margin = spacing
+                        };
+                        articlePanel.Children.Add(articleBox);
 
-                var articleWebsite = new TextBlock
-                {
-                    Text = articleList[i].Site
-                };
-                articlePlaceholder.Children.Add(articleWebsite);
+                        var articleTitle = new TextBlock
+                        {
+                            Text = Convert.ToString(articleList[i].Date) + " " + articleList[i].Title,
+                            FontWeight = FontWeights.Bold,
+                            TextTrimming = TextTrimming.CharacterEllipsis
+                        };
+                        articleBox.Children.Add(articleTitle);
+
+                        var articleWebsite = new TextBlock
+                        {
+                            Text = articleList[i].Site
+                        };
+                        articleBox.Children.Add(articleWebsite);
+                }
+
             }
         }
 
-        private void AddFeedButton_Click(object sender, RoutedEventArgs e)
+        private async void AddFeedButton_Click(object sender, RoutedEventArgs e)
         {
-            string url = addFeedTextBox.Text;
+            addFeedButton.IsEnabled = false;
 
-            //var document = XDocument.Load(url);
+            url = addFeedTextBox.Text;
 
-            var document = LoadDocumentAsync(url).Result;
-
-
+            document = await LoadDocumentAsync(url);
 
             // Get the title of the xmlFile as a string.
             string feedName = document.Descendants("title").First().Value;
-            selectFeedComboBox.SelectedItem = feedName;
-            selectFeedComboBox.Items.Add(feedName);
 
+            if (feedUrls.ContainsKey(feedName))
+            {
+                MessageBox.Show("Error");
+                return;
+            }
+            else
+            {
+                selectFeedComboBox.SelectedItem = feedName;
+                selectFeedComboBox.Items.Add(feedName);
 
+                feedUrls.Add(feedName, url);
+            }
+
+            addFeedButton.IsEnabled = true;
         }
 
         private async Task<XDocument> LoadDocumentAsync(string url)
         {
             // This is just to simulate a slow/large data transfer and make testing easier.
             // Remove it if you want to.
-            await Task.Delay(5000);
+            //await Task.Delay(1000);
             var response = await http.GetAsync(url);
             response.EnsureSuccessStatusCode();
             var stream = await response.Content.ReadAsStreamAsync();
