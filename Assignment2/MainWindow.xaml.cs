@@ -162,7 +162,7 @@ namespace Assignment2
                 };
                 articleList.Add(article);
             }
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 5; i++)
             {
                 var articlePlaceholder = new StackPanel
                 {
@@ -191,7 +191,9 @@ namespace Assignment2
         {
             string url = addFeedTextBox.Text;
 
-            var document = XDocument.Load(url);
+            //var document = XDocument.Load(url);
+
+            var document = LoadDocumentAsync(url).Result;
 
 
 
@@ -207,7 +209,7 @@ namespace Assignment2
         {
             // This is just to simulate a slow/large data transfer and make testing easier.
             // Remove it if you want to.
-            await Task.Delay(1000);
+            await Task.Delay(5000);
             var response = await http.GetAsync(url);
             response.EnsureSuccessStatusCode();
             var stream = await response.Content.ReadAsStreamAsync();
