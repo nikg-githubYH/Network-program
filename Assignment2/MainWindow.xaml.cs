@@ -18,16 +18,23 @@ using System.Xml.Linq;
 
 namespace Assignment2
 {
+    public class Article
+    {
+        public string Title { get; set; }
+        public DateTime Date { get; set; }
+        public string Feed { get; set; }
+        public string Url { get; set; }
+    }
     
     public partial class MainWindow : Window
     {
         private XDocument document;
         private string url;
         private Dictionary<string, string> feedUrls = new Dictionary<string, string>();
-        private Dictionary<string, DateTime> titleDates = new Dictionary<string, DateTime>();
+        private List<Article> articleList = new List<Article>();
+        private string feedName;
         private Thickness spacing = new Thickness(5);
         private HttpClient http = new HttpClient();
-        private string feedName;
         // We will need these as instance variables to access in event handlers.
         private TextBox addFeedTextBox;
         private Button addFeedButton;
@@ -141,10 +148,11 @@ namespace Assignment2
         {
             feedName = selectFeedComboBox.SelectedItem.ToString();
             articlePanel.Children.Clear();
-            //TODO lägg till all feeds
+
+            articleList.Clear();
+
             if (selectFeedComboBox.SelectedItem.ToString() == "All Feeds")
             {
-                titleDates.Clear();
                 foreach(var feed in feedUrls)
                 {
                     url = feed.Value;
@@ -154,29 +162,47 @@ namespace Assignment2
                     string[] dates = document.Descendants("pubDate").Select(t => t.Value).ToArray();
                     for(int i = 0; i < 5; i++)
                     {
-                        titleDates.Add(titles[i], DateTime.ParseExact(dates[i].Substring(0, 25), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture));
-
+                        Article article = new Article
+                        {
+                            Title = titles[i],
+                            Date = DateTime.ParseExact(dates[i].Substring(0, 25), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture),
+                            Feed = document.Descendants("title").First().Value,
+                            Url = url
+                        };
+                        articleList.Add(article);
                     }
-
                 }
-                titleDates.OrderBy(d => d.Value);
-                Print(feedUrls.Count * 5);
+                //articleList.OrderBy(d => d.Date);
+                foreach (var article in articleList.OrderByDescending(d => d.Date))
+                {
+                    Print(article);
+                }
+                
 
             }
             else
             {
                 url = feedUrls[selectFeedComboBox.SelectedItem.ToString()];
                 document = await LoadDocumentAsync(url);
-                titleDates.Clear();
                 // Get all titles as an array of strings.
                 string[] allTitles = document.Descendants("title").Skip(2).Select(t => t.Value).ToArray();
                 string[] allDates = document.Descendants("pubDate").Select(t => t.Value).ToArray();
+
                 for (int i = 0; i < 5; i++)
                 {
-                    titleDates.Add(allTitles[i], DateTime.ParseExact(allDates[i].Substring(0, 25), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture));
-                    
+                    Article article = new Article
+                    {
+                        Title = allTitles[i],
+                        Date = DateTime.ParseExact(allDates[i].Substring(0, 25), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture),
+                        Feed = document.Descendants("title").First().Value,
+                        Url = url
+                    };
+                    articleList.Add(article);
                 }
-                Print(5);
+                foreach (var article in articleList)
+                {
+                    Print(article);
+                }
             }
         }
 
@@ -199,8 +225,8 @@ namespace Assignment2
             }
             else
             {
-                selectFeedComboBox.SelectedItem = feedName;
                 selectFeedComboBox.Items.Add(feedName);
+                selectFeedComboBox.SelectedItem = feedName;
 
                 feedUrls.Add(feedName, url);
             }
@@ -208,12 +234,10 @@ namespace Assignment2
             addFeedButton.IsEnabled = true;
         }
 
-        private void Print(int count)
+        private void Print(Article article)
         {
-
-
-            for (int i = 0; i < count; i++)
-            {
+            //for (int i = 0; i < count; i++)
+            //{
                 var articleBox = new StackPanel
                 {
                     Orientation = Orientation.Vertical,
@@ -223,7 +247,7 @@ namespace Assignment2
 
                 var articleTitle = new TextBlock
                 {
-                    Text = Convert.ToString(titleDates.ElementAt(i).Value+ "  -  " + titleDates.ElementAt(i).Key),
+                    Text = Convert.ToString(article.Date + "  -  " + article.Title),
                     FontWeight = FontWeights.Bold,
                     TextTrimming = TextTrimming.CharacterEllipsis
                 };
@@ -231,10 +255,10 @@ namespace Assignment2
 
                 var articleWebsite = new TextBlock
                 {
-                    Text = feedName
+                    Text = article.Feed
                 };
                 articleBox.Children.Add(articleWebsite);
-            }
+            //}
         }
 
         private async Task<XDocument> LoadDocumentAsync(string url)
