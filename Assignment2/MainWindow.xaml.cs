@@ -151,10 +151,14 @@ namespace Assignment2
 
             articleList.Clear();
 
+            
+            var results = await Task.WhenAll(tasks);
+
             if (selectFeedComboBox.SelectedItem.ToString() == "All Feeds")
             {
                 foreach(var feed in feedUrls)
                 {
+                    var tasks = articleList(LoadDocumentAsync).ToList();
                     url = feed.Value;
                     document = await LoadDocumentAsync(url);
                     feedName = document.Descendants("title").First().Value;
@@ -172,6 +176,8 @@ namespace Assignment2
                         articleList.Add(article);
                     }
                 }
+
+                
                 //articleList.OrderBy(d => d.Date);
                 foreach (var article in articleList.OrderByDescending(d => d.Date))
                 {
