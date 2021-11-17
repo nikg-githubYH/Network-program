@@ -41,6 +41,7 @@ namespace Assignment2
         private ComboBox selectFeedComboBox;
         private Button loadArticlesButton;
         private StackPanel articlePanel;
+        private List<string> urlList = new List<string>();
 
         private string allFeeds = "All Feeds";
 
@@ -146,44 +147,36 @@ namespace Assignment2
 
         private async void LoadArticlesButton_Click(object sender, RoutedEventArgs e)
         {
-            feedName = selectFeedComboBox.SelectedItem.ToString();
+            loadArticlesButton.IsEnabled = false;
             articlePanel.Children.Clear();
-
             articleList.Clear();
-
-            
-            var results = await Task.WhenAll(tasks);
 
             if (selectFeedComboBox.SelectedItem.ToString() == "All Feeds")
             {
-                foreach(var feed in feedUrls)
-                {
-                    var tasks = articleList(LoadDocumentAsync).ToList();
-                    url = feed.Value;
-                    document = await LoadDocumentAsync(url);
-                    feedName = document.Descendants("title").First().Value;
-                    string[] titles = document.Descendants("title").Skip(2).Select(t => t.Value).ToArray();
-                    string[] dates = document.Descendants("pubDate").Select(t => t.Value).ToArray();
-                    for(int i = 0; i < 5; i++)
+                var tasks = urlList.Select(LoadDocumentAsync).ToList();
+                var results = await Task.WhenAll(tasks);
+                for (int i = 0; i < tasks.Count; i++)
+                {   
+                    url = urlList[i];
+                    feedName = results[i].Descendants("title").First().Value;
+                    string[] titles = results[i].Descendants("title").Skip(2).Select(t => t.Value).ToArray();
+                    string[] dates = results[i].Descendants("pubDate").Select(t => t.Value).ToArray();
+                    for(int j = 0; j < 5; j++)
                     {
                         Article article = new Article
                         {
-                            Title = titles[i],
-                            Date = DateTime.ParseExact(dates[i].Substring(0, 25), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture),
-                            Feed = document.Descendants("title").First().Value,
+                            Title = titles[j],
+                            Date = DateTime.ParseExact(dates[j].Substring(0, 25), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture),
+                            Feed = feedName,
                             Url = url
                         };
                         articleList.Add(article);
                     }
                 }
-
-                
-                //articleList.OrderBy(d => d.Date);
                 foreach (var article in articleList.OrderByDescending(d => d.Date))
                 {
                     Print(article);
-                }
-                
+                }   
 
             }
             else
@@ -210,6 +203,7 @@ namespace Assignment2
                     Print(article);
                 }
             }
+            loadArticlesButton.IsEnabled = true; 
         }
 
         private async void AddFeedButton_Click(object sender, RoutedEventArgs e)
@@ -217,6 +211,8 @@ namespace Assignment2
             addFeedButton.IsEnabled = false;
 
             url = addFeedTextBox.Text;
+
+            urlList.Add(url);
 
             document = await LoadDocumentAsync(url);
 
@@ -236,14 +232,11 @@ namespace Assignment2
 
                 feedUrls.Add(feedName, url);
             }
-
             addFeedButton.IsEnabled = true;
         }
 
         private void Print(Article article)
         {
-            //for (int i = 0; i < count; i++)
-            //{
                 var articleBox = new StackPanel
                 {
                     Orientation = Orientation.Vertical,
@@ -264,14 +257,13 @@ namespace Assignment2
                     Text = article.Feed
                 };
                 articleBox.Children.Add(articleWebsite);
-            //}
         }
 
         private async Task<XDocument> LoadDocumentAsync(string url)
         {
             // This is just to simulate a slow/large data transfer and make testing easier.
             // Remove it if you want to.
-            //await Task.Delay(5000);
+            await Task.Delay(1000);
             var response = await http.GetAsync(url);
             response.EnsureSuccessStatusCode();
             var stream = await response.Content.ReadAsStreamAsync();
