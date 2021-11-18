@@ -8,19 +8,19 @@
     "net5.0-windows7.0": []
   },
   "packageFolders": {
-    "C:\\Users\\Jörgen\\.nuget\\packages\\": {}
+    "C:\\Users\\Computer\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Jörgen\\Desktop\\.NET utbildning\\Inlämningsuppgift2\\Network-program\\Assignment2\\Assignment2.csproj",
+      "projectUniqueName": "C:\\Users\\Computer\\Documents\\GitHub\\Network-program\\Assignment2\\Assignment2.csproj",
       "projectName": "Assignment2",
-      "projectPath": "C:\\Users\\Jörgen\\Desktop\\.NET utbildning\\Inlämningsuppgift2\\Network-program\\Assignment2\\Assignment2.csproj",
-      "packagesPath": "C:\\Users\\Jörgen\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Jörgen\\Desktop\\.NET utbildning\\Inlämningsuppgift2\\Network-program\\Assignment2\\obj\\",
+      "projectPath": "C:\\Users\\Computer\\Documents\\GitHub\\Network-program\\Assignment2\\Assignment2.csproj",
+      "packagesPath": "C:\\Users\\Computer\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Computer\\Documents\\GitHub\\Network-program\\Assignment2\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\Jörgen\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Computer\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -63,7 +63,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.403\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.101\\RuntimeIdentifierGraph.json"
       }
     }
   }

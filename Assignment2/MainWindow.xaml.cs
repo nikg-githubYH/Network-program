@@ -18,6 +18,7 @@ using System.Xml.Linq;
 
 namespace Assignment2
 {
+    // Article class to facilitate article printing
     public class Article
     {
         public string Title { get; set; }
@@ -28,11 +29,9 @@ namespace Assignment2
     
     public partial class MainWindow : Window
     {
-        private XDocument document;
-        private string url;
-        private Dictionary<string, string> feedUrls = new Dictionary<string, string>();
+        // Global variables for access among methods
+        private Dictionary<string, string> feedUrls = new Dictionary<string, string>(); // dictionary to keep feedname and url connected
         private List<Article> articleList = new List<Article>();
-        private string feedName;
         private Thickness spacing = new Thickness(5);
         private HttpClient http = new HttpClient();
         // We will need these as instance variables to access in event handlers.
@@ -41,9 +40,6 @@ namespace Assignment2
         private ComboBox selectFeedComboBox;
         private Button loadArticlesButton;
         private StackPanel articlePanel;
-        private List<string> urlList = new List<string>();
-
-        private string allFeeds = "All Feeds";
 
         public MainWindow()
         {
@@ -117,8 +113,8 @@ namespace Assignment2
             grid.Children.Add(selectFeedComboBox);
             Grid.SetRow(selectFeedComboBox, 1);
             Grid.SetColumn(selectFeedComboBox, 1);
-            selectFeedComboBox.Items.Add(allFeeds);
-            selectFeedComboBox.SelectedItem = allFeeds;
+            selectFeedComboBox.Items.Add("All Feeds");
+            selectFeedComboBox.SelectedItem = "All Feeds";
 
             loadArticlesButton = new Button
             {
@@ -139,53 +135,48 @@ namespace Assignment2
             grid.Children.Add(articlePanel);
             Grid.SetRow(articlePanel, 2);
             Grid.SetColumnSpan(articlePanel, 3);
-
-            // These are just placeholders.
-            // Replace them with your own code that shows actual articles.
-           
         }
 
         private async void LoadArticlesButton_Click(object sender, RoutedEventArgs e)
         {
+            // disable load articles button, clear articles in list and panel
             loadArticlesButton.IsEnabled = false;
             articlePanel.Children.Clear();
             articleList.Clear();
 
+            // if "All Feeds" is selected, load all feeds asynchronously and add articles
             if (selectFeedComboBox.SelectedItem.ToString() == "All Feeds")
             {
-                var tasks = urlList.Select(LoadDocumentAsync).ToList();
+                var tasks = feedUrls.Values.Select(LoadDocumentAsync).ToList();
                 var results = await Task.WhenAll(tasks);
                 for (int i = 0; i < tasks.Count; i++)
-                {   
-                    url = urlList[i];
-                    feedName = results[i].Descendants("title").First().Value;
-                    string[] titles = results[i].Descendants("title").Skip(2).Select(t => t.Value).ToArray();
-                    string[] dates = results[i].Descendants("pubDate").Select(t => t.Value).ToArray();
-                    for(int j = 0; j < 5; j++)
+                {
+                    // Get all titles and dates as an array of strings.
+                    string[] titles = results[i].Descendants("item").Elements("title").Select(t => t.Value).Take(5).ToArray();
+                    string[] dates = results[i].Descendants("pubDate").Select(t => t.Value).Take(5).ToArray();
+
+                    for (int j = 0; j < 5; j++)
                     {
                         Article article = new Article
                         {
                             Title = titles[j],
                             Date = DateTime.ParseExact(dates[j].Substring(0, 25), "ddd, dd MMM yyyy HH:mm:ss", CultureInfo.InvariantCulture),
-                            Feed = feedName,
-                            Url = url
+                            Feed = results[i].Descendants("title").First().Value,
+                            Url = feedUrls.ElementAt(i).Value
                         };
                         articleList.Add(article);
                     }
                 }
-                foreach (var article in articleList.OrderByDescending(d => d.Date))
-                {
-                    Print(article);
-                }   
-
             }
+
+            // if a specific feed is selected, load all feeds sequentially and add articles
             else
             {
-                url = feedUrls[selectFeedComboBox.SelectedItem.ToString()];
-                document = await LoadDocumentAsync(url);
-                // Get all titles as an array of strings.
-                string[] allTitles = document.Descendants("title").Skip(2).Select(t => t.Value).ToArray();
-                string[] allDates = document.Descendants("pubDate").Select(t => t.Value).ToArray();
+                string url = feedUrls[selectFeedComboBox.SelectedItem.ToString()];
+                XDocument document = await LoadDocumentAsync(url);
+                // Get all titles and dates as an array of strings.
+                string[] allTitles = document.Descendants("item").Elements("title").Select(t => t.Value).Take(5).ToArray();
+                string[] allDates = document.Descendants("pubDate").Select(t => t.Value).Take(5).ToArray();
 
                 for (int i = 0; i < 5; i++)
                 {
@@ -198,30 +189,34 @@ namespace Assignment2
                     };
                     articleList.Add(article);
                 }
-                foreach (var article in articleList)
-                {
-                    Print(article);
-                }
             }
+
+            // print articles
+            foreach (var article in articleList.OrderByDescending(d => d.Date))
+            {
+                Print(article);
+            }
+
+            // enable load articles button
             loadArticlesButton.IsEnabled = true; 
         }
 
         private async void AddFeedButton_Click(object sender, RoutedEventArgs e)
         {
+            // disable add feed button
             addFeedButton.IsEnabled = false;
 
-            url = addFeedTextBox.Text;
-
-            urlList.Add(url);
-
-            document = await LoadDocumentAsync(url);
+            // load url and document
+            string url = addFeedTextBox.Text;
+            XDocument document = await LoadDocumentAsync(url);
 
             // Get the title of the xmlFile as a string.
-            feedName = document.Descendants("title").First().Value;
+            string feedName = document.Descendants("title").First().Value;
 
+            // if feed already exists, show error message, else add feed and url
             if (feedUrls.ContainsKey(feedName))
             {
-                MessageBox.Show("Error");
+                MessageBox.Show("Feed already exists.");
                 addFeedButton.IsEnabled = true;
                 return;
             }
@@ -232,11 +227,15 @@ namespace Assignment2
 
                 feedUrls.Add(feedName, url);
             }
+
+            // enable add feed button
             addFeedButton.IsEnabled = true;
         }
 
         private void Print(Article article)
         {
+            // Print all articles in panel
+
                 var articleBox = new StackPanel
                 {
                     Orientation = Orientation.Vertical,
